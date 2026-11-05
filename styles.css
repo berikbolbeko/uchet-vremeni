@@ -1,0 +1,468 @@
+/* =========================================================
+   Учет времени — стиль в духе iOS 26/27 «Liquid Glass»:
+   плавающие стеклянные панели, капсульные кнопки,
+   крупные скругления и мягкие блики.
+   Шрифт — системный San Francisco (SF Pro) и шкала текстовых
+   стилей iOS. Размеры заданы в rem, поэтому на iPhone текст
+   следует настройке «Размер текста» (Dynamic Type).
+   ========================================================= */
+
+:root {
+  --bg: #F2F2F7;
+  --card: #FFFFFF;
+  --text: #000000;
+  --muted: #8A8A8E;
+  --sep: rgba(60, 60, 67, .16);
+  --fill: rgba(120, 120, 128, .12);
+  --accent: #0A84FF;
+  --danger: #FF3B30;
+  --green: #34C759;
+
+  /* шрифты: на iPhone это SF Pro / SF Pro Rounded */
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", "Helvetica Neue",
+          "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-rounded: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  /* текстовые стили iOS (при стандартном размере текста 1rem = 17pt) */
+  --fs-large-title: 2rem;      /* 34 */
+  --fs-title1: 1.647rem;       /* 28 */
+  --fs-title2: 1.294rem;       /* 22 */
+  --fs-title3: 1.176rem;       /* 20 */
+  --fs-body: 1rem;             /* 17 */
+  --fs-callout: .941rem;       /* 16 */
+  --fs-subhead: .882rem;       /* 15 */
+  --fs-footnote: .765rem;      /* 13 */
+  --fs-caption: .706rem;       /* 12 */
+
+  /* стекло */
+  --glass-bg: rgba(255, 255, 255, .66);
+  --glass-border: rgba(255, 255, 255, .75);
+  --glass-shadow: 0 10px 30px rgba(0, 0, 0, .10), 0 1px 3px rgba(0, 0, 0, .06);
+  --glass-inner: inset 0 1px 1px rgba(255, 255, 255, .95), inset 0 -1px 1px rgba(0, 0, 0, .04);
+  --glass-sheen: linear-gradient(135deg, rgba(255, 255, 255, .55) 0%, rgba(255, 255, 255, 0) 38%,
+                 rgba(255, 255, 255, 0) 70%, rgba(255, 255, 255, .25) 100%);
+  --glass-blur: blur(24px) saturate(1.9);
+  --lens: rgba(120, 120, 128, .16);
+  --sheet-bg: rgba(246, 246, 250, .9);
+
+  --r-card: 26px;
+  --r-tile: 28px;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --card: #1C1C1E;
+    --text: #FFFFFF;
+    --muted: #98989F;
+    --sep: rgba(84, 84, 88, .55);
+    --fill: rgba(120, 120, 128, .26);
+    --accent: #0A84FF;
+    --glass-bg: rgba(48, 48, 52, .58);
+    --glass-border: rgba(255, 255, 255, .14);
+    --glass-shadow: 0 10px 30px rgba(0, 0, 0, .45), 0 1px 3px rgba(0, 0, 0, .3);
+    --glass-inner: inset 0 1px 1px rgba(255, 255, 255, .16), inset 0 -1px 1px rgba(0, 0, 0, .2);
+    --glass-sheen: linear-gradient(135deg, rgba(255, 255, 255, .14) 0%, rgba(255, 255, 255, 0) 40%,
+                   rgba(255, 255, 255, 0) 70%, rgba(255, 255, 255, .07) 100%);
+    --lens: rgba(255, 255, 255, .13);
+    --sheet-bg: rgba(28, 28, 30, .9);
+  }
+}
+/* «Уменьшить прозрачность» — стекло становится матовым */
+@media (prefers-reduced-transparency: reduce) {
+  :root { --glass-bg: var(--card); --glass-blur: none; --sheet-bg: var(--bg); }
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+
+/* Базовый размер = стиль Body. На iPhone он берётся из системного «Размера текста». */
+html { font-size: 17px; }
+@supports (font: -apple-system-body) {
+  html { font: -apple-system-body; }
+}
+html, body { margin: 0; background: var(--bg); color: var(--text); -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: 1.29;
+  -webkit-font-smoothing: antialiased;
+  font-optical-sizing: auto;
+  font-synthesis: none;
+}
+body.noscroll { overflow: hidden; }
+
+button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
+button:disabled { opacity: .35; cursor: default; }
+svg { display: block; }
+
+.mono { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.small { font-size: var(--fs-footnote); }
+
+/* ---------- Стекло ---------- */
+.glass, .glass-btn, .tabbar, .segmented, .toast, .banner {
+  position: relative;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: .5px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-inner);
+}
+.glass::before, .glass-btn::before, .tabbar::before, .segmented::before, .toast::before, .banner::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: var(--glass-sheen); pointer-events: none;
+}
+
+.glass-btn {
+  flex: none; width: 44px; height: 44px; padding: 0; border-radius: 50%;
+  display: grid; place-items: center; color: var(--text);
+  transition: transform .25s cubic-bezier(.3, 1.6, .5, 1), background .2s;
+}
+.glass-btn svg { width: 20px; height: 20px; position: relative; }
+.glass-btn:active:not(:disabled) { transform: scale(.88); }
+.glass-btn.prominent {
+  background: linear-gradient(180deg, #3D9BFF, var(--accent));
+  border-color: rgba(255, 255, 255, .35); color: #fff;
+  box-shadow: 0 8px 22px rgba(10, 132, 255, .35), inset 0 1px 1px rgba(255, 255, 255, .5);
+}
+
+/* ---------- Верхняя панель ---------- */
+.navbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: flex-end;
+  height: calc(56px + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) 16px 0;
+  pointer-events: none;
+}
+/* эффект края прокрутки: размытие, которое плавно исчезает книзу */
+.navbar::before {
+  content: ""; position: absolute; inset: 0 0 -18px;
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  background: linear-gradient(var(--bg) 0%, color-mix(in srgb, var(--bg) 70%, transparent) 55%, transparent);
+  -webkit-mask-image: linear-gradient(#000 55%, transparent);
+  mask-image: linear-gradient(#000 55%, transparent);
+  opacity: 0; transition: opacity .25s;
+}
+body.scrolled .navbar::before { opacity: 1; }
+.navbar-title {
+  position: absolute; left: 70px; right: 70px; bottom: 16px;
+  text-align: center; font-size: 17px; font-weight: 600;
+  opacity: 0; transform: translateY(6px); transition: opacity .2s, transform .2s;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+body.scrolled .navbar-title { opacity: 1; transform: none; }
+.navbar-actions { position: relative; display: flex; gap: 10px; pointer-events: auto; }
+
+#view {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: calc(50px + env(safe-area-inset-top)) 16px calc(118px + env(safe-area-inset-bottom));
+}
+/* Large Title: SF Pro Display Bold 34 */
+.large-title {
+  margin: 0 4px 14px; font-size: var(--fs-large-title); font-weight: 700; line-height: 1.2;
+}
+
+/* ---------- Плавающий таббар ---------- */
+.tabbar {
+  position: fixed; z-index: 30;
+  left: 50%; transform: translateX(-50%);
+  bottom: max(14px, calc(env(safe-area-inset-bottom) - 8px));
+  width: min(calc(100% - 32px), 440px);
+  display: flex; padding: 5px; border-radius: 999px;
+}
+.tab-lens {
+  position: absolute; top: 5px; bottom: 5px; left: 5px;
+  width: calc((100% - 10px) / 4); border-radius: 999px;
+  background: var(--lens);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, .35);
+  transform: translateX(calc(var(--i, 0) * 100%));
+  transition: transform .45s cubic-bezier(.3, 1.35, .5, 1);
+}
+/* подписи таббара в iOS не масштабируются — размер фиксированный */
+.tabbar button {
+  position: relative; flex: 1; border: 0; background: none;
+  height: 54px; padding: 0; color: var(--text);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  font-size: 10px; font-weight: 600;
+  transition: color .2s, transform .25s cubic-bezier(.3, 1.6, .5, 1);
+}
+.tabbar button:active { transform: scale(.9); }
+.tabbar button.active { color: var(--accent); }
+.tabbar svg { width: 26px; height: 26px; }
+
+/* ---------- Карточки и списки ---------- */
+.card { background: var(--card); border-radius: var(--r-card); padding: 16px 18px; }
+.list { padding: 4px 0; overflow: hidden; }
+.section-title {
+  display: flex; justify-content: space-between; gap: 12px;
+  margin: 26px 20px 8px; font-size: var(--fs-subhead); font-weight: 600;
+  color: var(--muted);
+}
+.row-item {
+  display: flex; align-items: center; gap: 13px;
+  width: 100%; padding: 10px 18px; border: 0; background: none;
+  text-align: left; position: relative;
+}
+.list > .row-item + .row-item::before {
+  content: ""; position: absolute; top: 0; left: 69px; right: 18px;
+  border-top: .5px solid var(--sep);
+}
+button.row-item { transition: background .15s; }
+button.row-item:active { background: var(--fill); }
+.row-main { flex: 1; min-width: 0; }
+.row-line { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.row-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-sub {
+  font-size: var(--fs-footnote); color: var(--muted); margin-top: 1px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chev { color: var(--muted); opacity: .5; }
+.chev svg { width: 14px; height: 14px; }
+
+.ticon {
+  flex: none; width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 21px;
+}
+.ticon.big { width: 56px; height: 56px; font-size: 30px; }
+
+.bar { height: 7px; border-radius: 99px; background: var(--fill); overflow: hidden; margin: 8px 0 5px; }
+.bar i { display: block; height: 100%; border-radius: 99px; }
+
+/* ---------- Таймер ---------- */
+.current {
+  position: relative; overflow: hidden;
+  display: grid; gap: 6px; justify-items: center; text-align: center;
+  padding: 22px 18px 18px; border-radius: 34px; color: var(--on-c);
+  background:
+    radial-gradient(120% 90% at 15% 0%, rgba(255, 255, 255, .38), transparent 55%),
+    radial-gradient(90% 80% at 100% 100%, rgba(0, 0, 0, .18), transparent 60%),
+    linear-gradient(150deg, var(--c), var(--c-deep));
+  box-shadow: 0 16px 40px -12px var(--c), inset 0 1px 1px rgba(255, 255, 255, .45);
+}
+.current-name {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 999px; font-weight: 600; font-size: var(--fs-callout);
+  background: rgba(255, 255, 255, .22); border: .5px solid rgba(255, 255, 255, .35);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+/* Цифры таймера — SF Pro Rounded, как в «Часах» и Live Activities */
+.clock {
+  font-family: var(--font-rounded);
+  font-size: min(3.765rem, 17vw); font-weight: 700; line-height: 1.05; margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.current .since { font-size: var(--fs-subhead); opacity: .8; margin-bottom: 8px; }
+
+.placeholder {
+  display: grid; gap: 6px; justify-items: center; text-align: center;
+  padding: 28px 22px; border-radius: 34px; background: var(--card);
+}
+.placeholder .big { font-size: 42px; }
+.placeholder strong { font-size: var(--fs-body); font-weight: 600; }
+
+.btn {
+  width: 100%; border: 0; border-radius: 999px; padding: 15px 18px;
+  font-weight: 600; font-size: var(--fs-body);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: transform .25s cubic-bezier(.3, 1.6, .5, 1);
+}
+.btn:active:not(:disabled) { transform: scale(.96); }
+.btn svg { width: 16px; height: 16px; }
+.btn.glass-tint {
+  position: relative; color: var(--on-c);
+  background: rgba(255, 255, 255, .24);
+  border: .5px solid rgba(255, 255, 255, .45);
+  -webkit-backdrop-filter: blur(14px) saturate(1.6); backdrop-filter: blur(14px) saturate(1.6);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, .55), 0 6px 18px rgba(0, 0, 0, .12);
+}
+.btn.danger-soft { background: var(--card); color: var(--danger); }
+.btn.plain { background: var(--card); color: var(--accent); }
+
+.today { margin: 26px 4px 14px; }
+.today .row-line h2 { margin: 0 0 10px; font-size: var(--fs-title2); font-weight: 700; }
+.today .row-line span { font-size: var(--fs-body); }
+.strip {
+  display: flex; gap: 3px; height: 12px; border-radius: 99px;
+  overflow: hidden; background: var(--fill);
+}
+.strip i { display: block; height: 100%; min-width: 4px; border-radius: 99px; }
+
+.grid {
+  display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+}
+.tile {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 16px 6px 13px; border-radius: var(--r-tile);
+  background: var(--card); border: 0;
+  -webkit-user-select: none; user-select: none;
+  transition: transform .3s cubic-bezier(.3, 1.6, .5, 1), box-shadow .3s;
+}
+.tile:active { transform: scale(.93); }
+.tile-icon {
+  width: 54px; height: 54px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 28px;
+  background: var(--c-soft);
+  transition: background .3s;
+}
+.tile.active {
+  background: linear-gradient(var(--c-soft), var(--c-soft)), var(--card);
+  box-shadow: 0 0 0 2px var(--c), 0 10px 26px -10px var(--c);
+}
+.tile.active .tile-icon { background: var(--c); animation: pulse 2s ease-in-out infinite; }
+.tile-name {
+  max-width: 100%; font-size: var(--fs-subhead); font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tile-time { min-height: 1.25em; font-size: var(--fs-caption); color: var(--muted); font-weight: 500; }
+.tile.add .tile-icon { background: var(--fill); color: var(--accent); }
+.tile.add .tile-icon svg { width: 24px; height: 24px; }
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--c-soft); }
+  50% { box-shadow: 0 0 0 8px var(--c-soft); }
+}
+
+.banner {
+  display: flex; gap: 10px; align-items: flex-start;
+  margin: 0 0 16px; padding: 14px 14px 14px 16px; border-radius: 24px; font-size: var(--fs-subhead);
+}
+.banner > * { position: relative; }
+.banner b { color: var(--accent); }
+.banner button { border: 0; background: none; color: var(--muted); font-size: 20px; padding: 0 2px; line-height: 1; }
+
+/* ---------- Статистика ---------- */
+.segmented { display: flex; padding: 4px; border-radius: 999px; }
+.seg-thumb {
+  position: absolute; top: 4px; bottom: 4px; left: 4px;
+  width: calc((100% - 8px) / 4); border-radius: 999px;
+  background: var(--card);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .12), inset 0 1px 1px rgba(255, 255, 255, .6);
+  transform: translateX(calc(var(--i, 0) * 100%));
+  transition: transform .45s cubic-bezier(.3, 1.35, .5, 1);
+}
+@media (prefers-color-scheme: dark) { .seg-thumb { background: rgba(255, 255, 255, .2); } }
+.segmented button {
+  position: relative; flex: 1; border: 0; background: none; padding: 8px 0;
+  border-radius: 999px; font-size: var(--fs-subhead); font-weight: 500; color: var(--muted);
+  transition: color .2s;
+}
+.segmented button.on { color: var(--text); font-weight: 600; }
+.navigator { display: flex; align-items: center; justify-content: space-between; margin: 14px 0 12px; }
+.navigator strong { font-size: var(--fs-body); font-weight: 600; }
+.navigator .glass-btn { width: 40px; height: 40px; }
+.navigator .glass-btn svg { width: 16px; height: 16px; }
+
+.donut { display: block; width: 100%; max-width: 260px; margin: 4px auto; }
+.donut-label { font-size: 12px; fill: var(--muted); text-anchor: middle; }
+.donut-value { font-family: var(--font-rounded); font-size: 17px; font-weight: 700; fill: var(--text); text-anchor: middle; }
+.bars { display: block; width: 100%; }
+.bars .grid-line { stroke: var(--sep); stroke-width: .6; }
+.bars .axis { font-size: 10px; fill: var(--muted); }
+
+.empty { text-align: center; color: var(--muted); padding: 56px 16px; font-size: var(--fs-subhead); }
+.empty .big { font-size: 48px; margin-bottom: 8px; }
+.empty strong { display: block; color: var(--text); font-size: var(--fs-title3); font-weight: 700; margin-bottom: 4px; }
+
+/* ---------- Плавающий лист (форма) ---------- */
+#sheet-root {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .28); animation: fade .25s ease; }
+.sheet {
+  position: relative;
+  width: calc(100% - 12px); max-width: 620px; max-height: calc(100% - 40px - env(safe-area-inset-top));
+  margin-bottom: max(6px, env(safe-area-inset-bottom));
+  overflow-y: auto; overscroll-behavior: contain;
+  background: var(--sheet-bg);
+  -webkit-backdrop-filter: blur(30px) saturate(1.8); backdrop-filter: blur(30px) saturate(1.8);
+  border: .5px solid var(--glass-border);
+  border-radius: 38px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .25), var(--glass-inner);
+  padding-bottom: 22px;
+  animation: up .5s cubic-bezier(.25, 1.25, .45, 1);
+}
+@keyframes fade { from { opacity: 0; } }
+@keyframes up { from { transform: translateY(105%); } }
+.grabber { width: 38px; height: 5px; border-radius: 99px; background: var(--sep); margin: 7px auto 0; }
+.sheet-head {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 8px 14px 12px;
+}
+.sheet-head strong { font-size: 17px; font-weight: 600; }
+.form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 2px 16px 0; }
+.group { background: var(--card); border-radius: var(--r-card); overflow: hidden; }
+.field {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 52px; padding: 8px 18px; background: var(--card); border-radius: var(--r-card);
+}
+.group .field { border-radius: 0; }
+.group .field + .field { box-shadow: inset 0 .5px 0 var(--sep); }
+.field.col { flex-direction: column; align-items: stretch; gap: 6px; padding: 14px 18px; }
+/* поля ввода не меньше 16px — иначе Safari увеличивает страницу при фокусе */
+.field input, .field select, .field textarea {
+  font: inherit; font-size: max(16px, var(--fs-body)); color: inherit;
+  border: 0; background: none; outline: none; text-align: right; min-width: 0;
+}
+/* «чипы» выбора, как компактные пикеры iOS */
+.field select, .field input[type="datetime-local"] {
+  -webkit-appearance: none; appearance: none;
+  background: var(--fill); border-radius: 999px; padding: 7px 14px;
+  font-size: max(16px, var(--fs-callout)); font-weight: 500; color: var(--text); max-width: 64%;
+}
+.field textarea { text-align: left; resize: none; width: 100%; }
+.field .grow { flex: 1; width: 100%; text-align: left; font-size: var(--fs-title3); font-weight: 600; }
+.field .err { color: var(--danger); }
+.field .hint { display: block; margin-top: 2px; font-size: var(--fs-footnote); line-height: 1.3; color: var(--muted); }
+.label-small { font-size: var(--fs-subhead); font-weight: 600; color: var(--muted); margin: 8px 18px -6px; }
+.field.col .label-small { margin: 0; font-size: var(--fs-footnote); }
+
+/* переключатель iOS 26+: шире, бегунок-капсула */
+input.switch {
+  -webkit-appearance: none; appearance: none; flex: none; margin: 0;
+  width: 62px; height: 28px; border-radius: 99px; background: var(--fill);
+  position: relative; transition: background .25s; cursor: pointer;
+}
+input.switch::after {
+  content: ""; position: absolute; top: 2px; left: 2px;
+  width: 36px; height: 24px; border-radius: 99px; background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .2), 0 0 0 .5px rgba(0, 0, 0, .04);
+  transition: transform .35s cubic-bezier(.3, 1.5, .5, 1), width .2s;
+}
+input.switch:active::after { width: 42px; }
+input.switch:checked { background: var(--green); }
+input.switch:checked::after { transform: translateX(22px); }
+input.switch:checked:active::after { transform: translateX(16px); }
+
+.swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
+.swatch {
+  aspect-ratio: 1; border: 0; border-radius: 50%; padding: 0;
+  display: grid; place-items: center; color: #fff; font-size: 17px; font-weight: 700;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, .45);
+  transition: transform .25s cubic-bezier(.3, 1.6, .5, 1), box-shadow .2s;
+}
+.swatch:active { transform: scale(.88); }
+.swatch.on { box-shadow: 0 0 0 3px var(--card), 0 0 0 5.5px var(--sw); }
+.emojis { display: grid; grid-template-columns: repeat(7, 1fr); gap: 9px; }
+.emoji {
+  aspect-ratio: 1; border: 0; border-radius: 50%; padding: 0;
+  background: var(--fill); font-size: 22px;
+  transition: transform .25s cubic-bezier(.3, 1.6, .5, 1), background .2s;
+}
+.emoji:active { transform: scale(.86); }
+.emoji.on { background: var(--c); box-shadow: 0 0 0 3px var(--c-soft); }
+
+.toast {
+  position: fixed; left: 50%; z-index: 100;
+  bottom: calc(96px + max(14px, calc(env(safe-area-inset-bottom) - 8px)));
+  transform: translateX(-50%); max-width: 90vw;
+  padding: 12px 20px; border-radius: 999px; font-size: var(--fs-subhead); font-weight: 500;
+  transition: opacity .3s, transform .3s;
+}
+.toast.hide { opacity: 0; transform: translateX(-50%) translateY(8px); }
+
+.note { font-size: var(--fs-footnote); color: var(--muted); margin: 10px 20px 0; line-height: 1.4; }

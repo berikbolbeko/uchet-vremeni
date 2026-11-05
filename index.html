@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Учет времени</title>
+  <meta name="description" content="Куда уходит ваше время">
+  <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Учет времени">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="navbar" id="navbar">
+    <div class="navbar-title"></div>
+    <div class="navbar-actions"></div>
+  </header>
+
+  <main id="view"></main>
+
+  <nav class="tabbar">
+    <span class="tab-lens"></span>
+    <!-- Иконки в стиле SF Symbols (заполненные, как в таббарах iOS 26+) -->
+    <button data-action="tab" data-tab="timer" class="active">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <defs><mask id="m-stopwatch"><rect width="24" height="24" fill="#fff"/>
+          <path d="M12 9.3v4.5" stroke="#000" stroke-width="2.3" stroke-linecap="round"/></mask></defs>
+        <g fill="currentColor">
+          <rect x="9.1" y="1.2" width="5.8" height="2.7" rx="1.35"/>
+          <rect x="10.9" y="3" width="2.2" height="3" />
+          <rect x="17.3" y="4.4" width="2.7" height="3.6" rx="1.35" transform="rotate(45 18.65 6.2)"/>
+          <circle cx="12" cy="13.9" r="8.6" mask="url(#m-stopwatch)"/>
+        </g>
+      </svg>
+      <span>Таймер</span>
+    </button>
+    <button data-action="tab" data-tab="stats">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+        <path d="M11 4.1A8.9 8.9 0 1 0 19.9 13H11z"/>
+        <path d="M13.2 1.9A8.9 8.9 0 0 1 22.1 10.8H13.2z"/>
+      </svg>
+      <span>Статистика</span>
+    </button>
+    <button data-action="tab" data-tab="history">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+        <circle cx="4.3" cy="5.8" r="2.05"/><circle cx="4.3" cy="12" r="2.05"/><circle cx="4.3" cy="18.2" r="2.05"/>
+        <rect x="8.8" y="4.4" width="13" height="2.8" rx="1.4"/>
+        <rect x="8.8" y="10.6" width="13" height="2.8" rx="1.4"/>
+        <rect x="8.8" y="16.8" width="13" height="2.8" rx="1.4"/>
+      </svg>
+      <span>История</span>
+    </button>
+    <button data-action="tab" data-tab="activities">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+        <rect x="2.4" y="2.4" width="8.6" height="8.6" rx="2.6"/><rect x="13" y="2.4" width="8.6" height="8.6" rx="2.6"/>
+        <rect x="2.4" y="13" width="8.6" height="8.6" rx="2.6"/><rect x="13" y="13" width="8.6" height="8.6" rx="2.6"/>
+      </svg>
+      <span>Занятия</span>
+    </button>
+  </nav>
+
+  <div id="sheet-root" hidden></div>
+  <input type="file" id="import-file" accept="application/json,.json" hidden>
+
+  <script src="app.js"></script>
+</body>
+</html>
