@@ -16,19 +16,43 @@ const PALETTE = [
 ];
 /** Иконки для занятий: эмодзи или собственные SVG-значки (ключи «svg:…», см. SVG_ICONS). */
 const EMOJIS = [
-  '💼', '💻', '⌨️', '🔍', '✍️', '📖', '🗣️',               // работа, разработка, поиск, учёба
-  '🏃', '🏋️', '😴', '🍽️', '🙏', '🎵', '⭐',               // спорт, сон, еда, отдых
+  '💼', '💻', 'svg:code', '🔍', '✍️', '📖', '🗣️',          // работа, разработка, поиск, учёба
+  '🏃', '🏋️', '🛌', '🍽️', '🙏', '🎵', '⭐',               // спорт, сон, еда, отдых
   '🚗', '🚌', '🛒', '🏠', '🧹', '👨‍👩‍👧', '👶',            // дорога, дом, семья, дети
-  '📱', '💬', 'svg:instagram', 'svg:youtube', '📺', '🎮', '🎉', // соцсети, медиа, развлечения
+  '📱', 'svg:tiktok', 'svg:instagram', 'svg:youtube', '📺', '🎮', '🎉', // соцсети, медиа, развлечения
 ];
 const ICON_LABELS = {
-  '⌨️': 'Разработка', '🔍': 'Поиск', '👶': 'Дети', '🎉': 'Развлечения',
-  '💬': 'Социальная сеть', 'svg:instagram': 'Instagram', 'svg:youtube': 'YouTube',
+  'svg:code': 'Разработка', '🔍': 'Поиск', '🛌': 'Сон', '👶': 'Дети', '🎉': 'Развлечения',
+  'svg:tiktok': 'TikTok', 'svg:instagram': 'Instagram', 'svg:youtube': 'YouTube',
 };
 
 /* Значки, которых нет среди эмодзи. Рисуются в размер шрифта (1em), как эмодзи. */
 let svgUid = 0;
+const TIKTOK_NOTE = '<path d="M13.4 5.4v9.8a3.1 3.1 0 1 1-3.1-3.1"/><path d="M13.4 5.6c.4 2.1 1.9 3.4 4 3.6"/>';
 const SVG_ICONS = {
+  'svg:code': {
+    text: '💻',
+    html: () => {
+      const id = `cd${++svgUid}`;
+      return `<svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#3B4A66"/><stop offset="1" stop-color="#171D2B"/></linearGradient></defs>
+        <rect x="1.8" y="1.8" width="20.4" height="20.4" rx="6" fill="url(#${id})"/>
+        <path d="M9.1 8.3L5.5 12l3.6 3.7M14.9 8.3l3.6 3.7-3.6 3.7" fill="none" stroke="#fff"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M13.1 7.3l-2.2 9.4" stroke="#5EEAD4" stroke-width="2" stroke-linecap="round"/></svg>`;
+    },
+  },
+  'svg:tiktok': {
+    text: '🎵',
+    html: () => `<svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="1.8" y="1.8" width="20.4" height="20.4" rx="6" fill="#111"/>
+      <g fill="none" stroke-width="2.3" stroke-linecap="round">
+        <g stroke="#25F4EE" transform="translate(-.7 -.5)">${TIKTOK_NOTE}</g>
+        <g stroke="#FE2C55" transform="translate(.7 .5)">${TIKTOK_NOTE}</g>
+        <g stroke="#fff">${TIKTOK_NOTE}</g>
+      </g></svg>`,
+  },
   'svg:youtube': {
     text: '▶️',
     html: () => `<svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true">
@@ -132,12 +156,12 @@ function toast(msg) {
 function defaultState() {
   const now = Date.now();
   const defs = [
-    ['Работа', '💼', '#2E86DE'], ['Учёба', '📚', '#5F27CD'], ['Спорт', '🏃', '#10AC84'],
-    ['Сон', '😴', '#576574'], ['Еда', '🍽️', '#FF9F43'], ['Дорога', '🚗', '#FECA57'],
-    ['Соцсети', '📱', '#FF6B6B'], ['Отдых', '🎮', '#FF6B9D'],
+    ['Работа', '💼', '#2E86DE'], ['Разработка', 'svg:code', '#A29BFE'], ['Учёба', '📚', '#5F27CD'],
+    ['Спорт', '🏃', '#10AC84'], ['Сон', '🛌', '#576574'], ['Еда', '🍽️', '#FF9F43'],
+    ['Дорога', '🚗', '#FECA57'], ['Соцсети', '📱', '#FF6B6B'], ['Отдых', '🎮', '#FF6B9D'],
   ];
   return {
-    version: 2,
+    version: 3,
     activities: defs.map(([name, icon, color], i) =>
       ({ id: uid() + i, name, icon, color, createdAt: now + i, overnight: name === 'Сон' })),
     entries: [],
@@ -149,6 +173,21 @@ function migrate(s) {
     // v2: у занятия «Сон» включается режим «ночной сон»
     s.activities.forEach(a => { if (a.name.trim().toLowerCase() === 'сон') a.overnight = true; });
     s.version = 2;
+  }
+  if (!(s.version >= 3)) {
+    // v3: новые иконки сна и разработки + занятие «Разработка» сразу после «Работы»
+    s.activities.forEach(a => {
+      if (a.icon === '😴') a.icon = '🛌';
+      if (a.icon === '⌨️') a.icon = 'svg:code';
+    });
+    if (!s.activities.some(a => a.name.trim().toLowerCase() === 'разработка')) {
+      const work = s.activities.find(a => a.name.trim().toLowerCase() === 'работа');
+      s.activities.push({
+        id: uid(), name: 'Разработка', icon: 'svg:code', color: '#A29BFE',
+        createdAt: work ? Number(work.createdAt) + 0.5 : Date.now(), overnight: false,
+      });
+    }
+    s.version = 3;
   }
   return s;
 }

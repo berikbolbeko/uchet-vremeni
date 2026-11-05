@@ -1,6 +1,6 @@
 // Service worker: сохраняет файлы приложения на телефоне, чтобы оно открывалось без интернета.
 // При изменении файлов приложения увеличьте номер версии.
-const CACHE = 'uchet-vremeni-v4';
+const CACHE = 'uchet-vremeni-v5';
 const ASSETS = [
   './',
   './index.html',

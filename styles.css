@@ -141,11 +141,11 @@ svg.ico-svg { display: inline-block; width: 1em; height: 1em; vertical-align: -.
 }
 /* эффект края прокрутки: размытие, которое плавно исчезает книзу */
 .navbar::before {
-  content: ""; position: absolute; inset: 0 0 -18px;
-  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-  background: linear-gradient(var(--bg) 0%, color-mix(in srgb, var(--bg) 70%, transparent) 55%, transparent);
-  -webkit-mask-image: linear-gradient(#000 55%, transparent);
-  mask-image: linear-gradient(#000 55%, transparent);
+  content: ""; position: absolute; inset: 0 0 -16px;
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  background: linear-gradient(var(--bg) 0%, color-mix(in srgb, var(--bg) 92%, transparent) 62%, transparent);
+  -webkit-mask-image: linear-gradient(#000 70%, transparent);
+  mask-image: linear-gradient(#000 70%, transparent);
   opacity: 0; transition: opacity .25s;
 }
 body.scrolled .navbar::before { opacity: 1; }
