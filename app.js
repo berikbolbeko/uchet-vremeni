@@ -111,6 +111,9 @@ const ICON = {
   left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
   right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
   stop: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="3.5"/></svg>',
+  reorder: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 19V5M4.5 8.5L8 5l3.5 3.5M16 5v14M12.5 15.5L16 19l3.5-3.5"/></svg>',
+  grip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 8h14M5 12h14M5 16h14"/></svg>',
+  bars: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 20V5M12 20V10M19 20v-5"/></svg>',
 };
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -161,9 +164,9 @@ function defaultState() {
     ['Дорога', '🚗', '#FECA57'], ['Соцсети', '📱', '#FF6B6B'], ['Отдых', '🎮', '#FF6B9D'],
   ];
   return {
-    version: 3,
+    version: 4,
     activities: defs.map(([name, icon, color], i) =>
-      ({ id: uid() + i, name, icon, color, createdAt: now + i, overnight: name === 'Сон' })),
+      ({ id: uid() + i, name, icon, color, createdAt: now + i, order: i, overnight: name === 'Сон' })),
     entries: [],
   };
 }
@@ -189,6 +192,11 @@ function migrate(s) {
     }
     s.version = 3;
   }
+  if (!(s.version >= 4)) {
+    // v4: собственный порядок занятий (поле order), изначально — по дате создания
+    [...s.activities].sort((a, b) => a.createdAt - b.createdAt).forEach((a, i) => { a.order = i; });
+    s.version = 4;
+  }
   return s;
 }
 function isValidState(s) {
@@ -212,7 +220,10 @@ function save() {
 let state = load();
 save();
 
-const sortedActivities = () => [...state.activities].sort((a, b) => a.createdAt - b.createdAt);
+/** Занятия в порядке пользователя (поле order), при равенстве — по дате создания. */
+const sortedActivities = () => [...state.activities]
+  .sort((a, b) => ((a.order ?? Infinity) - (b.order ?? Infinity)) || (a.createdAt - b.createdAt));
+const nextOrder = () => state.activities.reduce((m, a) => Math.max(m, Number.isFinite(a.order) ? a.order : -1), -1) + 1;
 const activityById = id => state.activities.find(a => a.id === id);
 const runningEntry = () => state.entries.find(e => e.end == null);
 
@@ -305,11 +316,16 @@ const view = $('#view');
 const TABS = ['timer', 'stats', 'history', 'activities'];
 const navbar = $('#navbar');
 
-/** Крупный заголовок в контенте + компактный заголовок и стеклянная кнопка в верхней панели. */
-function header(title, action) {
+/**
+ * Крупный заголовок в контенте + компактный заголовок и стеклянные кнопки в верхней панели.
+ * Кнопка — строка с действием (кнопка «+») или объект { action, icon, label, prominent }.
+ */
+function header(title, ...actions) {
   $('.navbar-title', navbar).textContent = title;
-  $('.navbar-actions', navbar).innerHTML = action
-    ? `<button class="glass-btn" data-action="${action}" aria-label="Добавить">${ICON.plus}</button>` : '';
+  $('.navbar-actions', navbar).innerHTML = actions
+    .map(a => (typeof a === 'string' ? { action: a, icon: ICON.plus, label: 'Добавить' } : a))
+    .map(a => `<button class="glass-btn${a.prominent ? ' prominent' : ''}" data-action="${a.action}"
+      aria-label="${a.label}" title="${a.label}">${a.icon}</button>`).join('');
   return `<h1 class="large-title">${title}</h1>`;
 }
 
@@ -591,14 +607,123 @@ function renderHistory() {
 }
 
 /* ---------- Экран «Занятия» ---------- */
+let reorderMode = false;
+const USAGE_DAYS = 30;
+
+/** Время по занятиям за последние USAGE_DAYS дней. */
+function recentUsage() {
+  const now = Date.now();
+  return new Map(totals(now - USAGE_DAYS * DAY, now, now).map(t => [t.id, t.ms]));
+}
+
+/** Режим «Изменить порядок»: перетаскивание за ≡ и сортировка по частоте. */
+function renderReorder(acts) {
+  const usage = recentUsage();
+  view.innerHTML = `
+    ${header('Порядок', { action: 'reorder-done', icon: ICON.check, label: 'Готово', prominent: true })}
+    <button class="btn plain usage-btn" data-action="sort-usage">${ICON.bars} Самые частые — наверх</button>
+    <p class="note">Сортировка по времени за последние ${USAGE_DAYS} дней. Или перетащите занятие за ≡.</p>
+    <section class="card list reorder-list" id="reorder-list">
+      ${acts.map(a => `
+        <div class="row-item" data-id="${esc(a.id)}">
+          <span class="ticon" style="background:${soft(a.color)}">${iconHTML(a.icon)}</span>
+          <div class="row-main"><div class="row-name">${esc(a.name)}</div>
+            <div class="row-sub">${usage.get(a.id) ? `${fmtDur(usage.get(a.id))} за ${USAGE_DAYS} дн.` : 'не использовалось'}</div></div>
+          <span class="grip" data-grip role="button" aria-label="Перетащить «${esc(a.name)}»">${ICON.grip}</span>
+        </div>`).join('')}
+    </section>`;
+  initDrag($('#reorder-list', view));
+}
+
+function saveOrder(ids) {
+  ids.forEach((id, i) => { const a = activityById(id); if (a) a.order = i; });
+  save();
+}
+
+function sortByUsage() {
+  const usage = recentUsage();
+  // сортировка стабильная: при равном времени сохраняется текущий порядок
+  const ids = sortedActivities().sort((a, b) => (usage.get(b.id) || 0) - (usage.get(a.id) || 0)).map(a => a.id);
+  saveOrder(ids);
+  render();
+  toast('Самые частые занятия — наверху');
+}
+
+/** Перетаскивание строк за «ручку» ≡ (работает пальцем и мышью). */
+function initDrag(list) {
+  list.addEventListener('pointerdown', ev => {
+    const grip = ev.target.closest('[data-grip]');
+    if (!grip || ev.button > 0) return;
+    ev.preventDefault();
+    const row = grip.closest('.row-item');
+    const rows = [...list.querySelectorAll('.row-item')];
+    const rects = rows.map(r => r.getBoundingClientRect());
+    const centers = rects.map(r => r.top + r.height / 2);
+    const from = rows.indexOf(row);
+    const h = rects[from].height;
+    const minDy = rects[0].top - rects[from].top;
+    const maxDy = rects[rects.length - 1].bottom - rects[from].bottom;
+    const startY = ev.clientY;
+    const startScroll = window.scrollY;
+    let lastY = startY;
+    let to = from;
+    row.classList.add('dragging');
+    list.classList.add('is-dragging');
+    try { grip.setPointerCapture(ev.pointerId); } catch { /* синтетические события */ }
+
+    const apply = () => {
+      // смещение в координатах документа: учитываем прокрутку во время перетаскивания
+      const dy = Math.max(minDy, Math.min(maxDy, lastY - startY + (window.scrollY - startScroll)));
+      row.style.transform = `translateY(${dy}px) scale(1.02)`;
+      const c = centers[from] + dy;
+      to = centers.filter((y, i) => i !== from && y < c).length;
+      rows.forEach((r, i) => {
+        if (r === row) return;
+        let shift = 0;
+        if (from < to && i > from && i <= to) shift = -h;
+        if (from > to && i < from && i >= to) shift = h;
+        r.style.transform = shift ? `translateY(${shift}px)` : '';
+      });
+    };
+    const move = e => { lastY = e.clientY; apply(); };
+    // автопрокрутка, когда палец у верхнего или нижнего края экрана (внизу — таббар)
+    let raf = 0;
+    const autoScroll = () => {
+      const top = 110, bottom = window.innerHeight - 140;
+      let v = 0;
+      if (lastY > bottom) v = Math.min(16, (lastY - bottom) / 5);
+      else if (lastY < top) v = -Math.min(16, (top - lastY) / 5);
+      if (v) { window.scrollBy(0, v); apply(); }
+      raf = requestAnimationFrame(autoScroll);
+    };
+    raf = requestAnimationFrame(autoScroll);
+    const up = () => {
+      cancelAnimationFrame(raf);
+      grip.removeEventListener('pointermove', move);
+      grip.removeEventListener('pointerup', up);
+      grip.removeEventListener('pointercancel', up);
+      const ids = rows.map(r => r.dataset.id);
+      const [moved] = ids.splice(from, 1);
+      ids.splice(to, 0, moved);
+      saveOrder(ids);
+      if (to !== from) navigator.vibrate?.(8);
+      render();
+    };
+    grip.addEventListener('pointermove', move);
+    grip.addEventListener('pointerup', up);
+    grip.addEventListener('pointercancel', up);
+  });
+}
+
 function renderActivities() {
   const counts = new Map();
   for (const e of state.entries) counts.set(e.activityId, (counts.get(e.activityId) || 0) + 1);
   const bytes = new Blob([localStorage.getItem(STORAGE_KEY) || '']).size;
   const acts = sortedActivities();
+  if (reorderMode && acts.length) return renderReorder(acts);
 
   view.innerHTML = `
-    ${header('Занятия', 'new-activity')}
+    ${header('Занятия', { action: 'reorder', icon: ICON.reorder, label: 'Изменить порядок' }, 'new-activity')}
     ${acts.length ? `
     <section class="card list">
       ${acts.map(a => `
@@ -755,7 +880,7 @@ function openActivityEditor(act) {
       if (!name) return;
       const overnight = $('[name="overnight"]', sheet).checked;
       if (act) Object.assign(act, { name, color, icon, overnight });
-      else state.activities.push({ id: uid(), name, color, icon, overnight, createdAt: Date.now() });
+      else state.activities.push({ id: uid(), name, color, icon, overnight, createdAt: Date.now(), order: nextOrder() });
       save(); closeSheet(); render();
     } else if (action === 'delete') {
       const n = state.entries.filter(e => e.activityId === act.id).length;
@@ -812,6 +937,7 @@ importInput.addEventListener('change', async () => {
     data.activities.forEach((a, i) => {
       a.color = safeColor(a.color); a.icon = String(a.icon ?? '⭐');
       a.createdAt = Number(a.createdAt) || i; a.overnight = !!a.overnight;
+      if (!Number.isFinite(a.order)) delete a.order;
     });
     state = migrate(data);
     save(); render();
@@ -835,8 +961,11 @@ document.addEventListener('click', ev => {
 
   switch (action) {
     case 'tab':
-      if (tab !== el.dataset.tab) { tab = el.dataset.tab; render(); window.scrollTo(0, 0); }
+      if (tab !== el.dataset.tab) { tab = el.dataset.tab; reorderMode = false; render(); window.scrollTo(0, 0); }
       break;
+    case 'reorder': reorderMode = true; render(); window.scrollTo(0, 0); break;
+    case 'reorder-done': reorderMode = false; render(); break;
+    case 'sort-usage': sortByUsage(); break;
     case 'toggle': toggleActivity(el.dataset.id); break;
     case 'stop': {
       const r = runningEntry();

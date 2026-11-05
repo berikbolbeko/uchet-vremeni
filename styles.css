@@ -465,10 +465,31 @@ input.switch:checked:active::after { transform: translateX(16px); }
 .toast {
   position: fixed; left: 50%; z-index: 100;
   bottom: calc(96px + max(14px, calc(env(safe-area-inset-bottom) - 8px)));
-  transform: translateX(-50%); max-width: 90vw;
+  transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); text-align: center;
   padding: 12px 20px; border-radius: 999px; font-size: var(--fs-subhead); font-weight: 500;
   transition: opacity .3s, transform .3s;
 }
 .toast.hide { opacity: 0; transform: translateX(-50%) translateY(8px); }
+
+/* ---------- Изменение порядка занятий ---------- */
+.usage-btn { margin-bottom: 2px; }
+.usage-btn svg { width: 18px; height: 18px; }
+.reorder-list { overflow: visible; margin-top: 16px; -webkit-user-select: none; user-select: none; }
+.reorder-list .row-item {
+  transition: transform .22s cubic-bezier(.2, .8, .2, 1), box-shadow .2s;
+  border-radius: 18px; padding-right: 6px;
+}
+.reorder-list .row-item.dragging {
+  transition: none; z-index: 5; background: var(--card);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .18), 0 2px 6px rgba(0, 0, 0, .08);
+}
+.reorder-list .row-item.dragging::before,
+.reorder-list.is-dragging .row-item::before { opacity: 0; }
+.grip {
+  flex: none; width: 46px; height: 46px; display: grid; place-items: center;
+  color: var(--muted); touch-action: none; cursor: grab;
+}
+.grip svg { width: 22px; height: 22px; }
+.dragging .grip { cursor: grabbing; color: var(--accent); }
 
 .note { font-size: var(--fs-footnote); color: var(--muted); margin: 10px 20px 0; line-height: 1.4; }
