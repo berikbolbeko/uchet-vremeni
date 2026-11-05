@@ -386,7 +386,6 @@ function renderTimer() {
   view.innerHTML = `
     ${header('Учет времени')}
     ${banner}
-    ${backupBanner()}
     ${current}
     <section class="today">
       <div class="row-line"><h2>Сегодня</h2><span class="muted mono" data-live="today-sum">${fmtDur(sum)}</span></div>
@@ -927,48 +926,16 @@ async function exportData() {
   markBackedUp();
 }
 
-/* ---------- Напоминание о резервной копии ---------- */
+/* ---------- Дата последней резервной копии ---------- */
 const BACKUP_KEY = 'lastBackup';
-const SNOOZE_KEY = 'backupSnoozeUntil';
-const BACKUP_EVERY_DAYS = 7;
 
 function markBackedUp() {
   localStorage.setItem(BACKUP_KEY, String(Date.now()));
-  localStorage.removeItem(SNOOZE_KEY);
+  localStorage.removeItem('backupSnoozeUntil'); // осталось от прежней версии с напоминанием
   toast('Резервная копия сохранена');
   if (!sheetHandler) render();
 }
 const lastBackup = () => Number(localStorage.getItem(BACKUP_KEY)) || 0;
-
-/** Сколько дней прошло с последней копии (или с первой записи, если копий ещё не было). */
-function daysWithoutBackup(now = Date.now()) {
-  const first = state.entries.reduce((m, e) => Math.min(m, e.start), Infinity);
-  const since = lastBackup() || first;
-  return Number.isFinite(since) ? Math.floor((now - since) / DAY) : 0;
-}
-function backupDue(now = Date.now()) {
-  if (!state.entries.length) return false;
-  if (now < (Number(localStorage.getItem(SNOOZE_KEY)) || 0)) return false;
-  return daysWithoutBackup(now) >= BACKUP_EVERY_DAYS;
-}
-function backupBanner() {
-  if (!backupDue()) return '';
-  const d = daysWithoutBackup();
-  const text = lastBackup()
-    ? `Последняя резервная копия — ${d} дн. назад.`
-    : 'Резервная копия ещё ни разу не сохранялась.';
-  return `
-    <div class="banner backup-banner">
-      <span>💾</span>
-      <div class="row-main">
-        <div><b>Сохраните копию данных</b><br>${text}</div>
-        <div class="banner-actions">
-          <button class="pill prominent" data-action="export">Сохранить</button>
-          <button class="pill" data-action="snooze-backup">Позже</button>
-        </div>
-      </div>
-    </div>`;
-}
 const lastBackupText = () => (lastBackup()
   ? `Последняя копия: ${new Date(lastBackup()).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}`
   : 'Копия ещё не сохранялась');
@@ -1033,11 +1000,6 @@ document.addEventListener('click', ev => {
     case 'next': statsAnchor = shiftAnchor(statsPeriod, statsAnchor, 1); render(); break;
     case 'more-history': historyDays += 30; render(); break;
     case 'export': exportData(); break;
-    case 'snooze-backup':
-      localStorage.setItem(SNOOZE_KEY, String(Date.now() + 2 * DAY));
-      render();
-      toast('Напомню через 2 дня');
-      break;
     case 'import': importInput.click(); break;
     case 'hide-install': localStorage.setItem('hideInstall', '1'); render(); break;
   }
