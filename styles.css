@@ -95,6 +95,10 @@ body.noscroll { overflow: hidden; }
 button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
 button:disabled { opacity: .35; cursor: default; }
 svg { display: block; }
+/* SVG-значки занятий (YouTube, Instagram) — размером с эмодзи */
+svg.ico-svg { display: inline-block; width: 1em; height: 1em; vertical-align: -.14em; flex: none; }
+/* на цветном фоне (активная плитка, выбранная иконка) — светлая обводка для контраста */
+.tile.active .ico-svg, .emoji.on .ico-svg { filter: drop-shadow(0 0 1.2px rgba(255, 255, 255, .95)); }
 
 .mono { font-variant-numeric: tabular-nums; }
 .muted { color: var(--muted); }
@@ -392,6 +396,8 @@ button.row-item:active { background: var(--fill); }
   position: sticky; top: 0; z-index: 2;
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding: 8px 14px 12px;
+  /* при прокрутке содержимое плавно уходит под шапку */
+  background: linear-gradient(to bottom, var(--sheet-bg) 72%, transparent);
 }
 .sheet-head strong { font-size: 17px; font-weight: 600; }
 .form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 2px 16px 0; }
@@ -438,7 +444,7 @@ input.switch:checked { background: var(--green); }
 input.switch:checked::after { transform: translateX(22px); }
 input.switch:checked:active::after { transform: translateX(16px); }
 
-.swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
+.swatches { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
 .swatch {
   aspect-ratio: 1; border: 0; border-radius: 50%; padding: 0;
   display: grid; place-items: center; color: #fff; font-size: 17px; font-weight: 700;
@@ -447,9 +453,9 @@ input.switch:checked:active::after { transform: translateX(16px); }
 }
 .swatch:active { transform: scale(.88); }
 .swatch.on { box-shadow: 0 0 0 3px var(--card), 0 0 0 5.5px var(--sw); }
-.emojis { display: grid; grid-template-columns: repeat(7, 1fr); gap: 9px; }
+.emojis { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 9px; }
 .emoji {
-  aspect-ratio: 1; border: 0; border-radius: 50%; padding: 0;
+  aspect-ratio: 1; border: 0; border-radius: 50%; padding: 0; min-width: 0; overflow: hidden;
   background: var(--fill); font-size: 22px;
   transition: transform .25s cubic-bezier(.3, 1.6, .5, 1), background .2s;
 }

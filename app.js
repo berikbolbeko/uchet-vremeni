@@ -14,10 +14,51 @@ const PALETTE = [
   '#FF6B6B', '#FF9F43', '#FECA57', '#1DD1A1', '#10AC84', '#54A0FF',
   '#2E86DE', '#5F27CD', '#A29BFE', '#FF6B9D', '#8395A7', '#576574',
 ];
+/** Иконки для занятий: эмодзи или собственные SVG-значки (ключи «svg:…», см. SVG_ICONS). */
 const EMOJIS = [
-  '💼', '💻', '📚', '🎓', '✍️', '🏃', '🏋️', '🧘', '😴', '🍽️', '☕', '🚗', '🚌', '📱',
-  '📺', '🎮', '🛒', '🏠', '🧹', '👨‍👩‍👧', '❤️', '🗣️', '🎵', '🎨', '🙏', '📖', '🌿', '⭐',
+  '💼', '💻', '⌨️', '🔍', '✍️', '📖', '🗣️',               // работа, разработка, поиск, учёба
+  '🏃', '🏋️', '😴', '🍽️', '🙏', '🎵', '⭐',               // спорт, сон, еда, отдых
+  '🚗', '🚌', '🛒', '🏠', '🧹', '👨‍👩‍👧', '👶',            // дорога, дом, семья, дети
+  '📱', '💬', 'svg:instagram', 'svg:youtube', '📺', '🎮', '🎉', // соцсети, медиа, развлечения
 ];
+const ICON_LABELS = {
+  '⌨️': 'Разработка', '🔍': 'Поиск', '👶': 'Дети', '🎉': 'Развлечения',
+  '💬': 'Социальная сеть', 'svg:instagram': 'Instagram', 'svg:youtube': 'YouTube',
+};
+
+/* Значки, которых нет среди эмодзи. Рисуются в размер шрифта (1em), как эмодзи. */
+let svgUid = 0;
+const SVG_ICONS = {
+  'svg:youtube': {
+    text: '▶️',
+    html: () => `<svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="1.2" y="4.6" width="21.6" height="14.8" rx="4.4" fill="#FF0033"/>
+      <path d="M9.8 8.7v6.6l5.7-3.3z" fill="#fff"/></svg>`,
+  },
+  'svg:instagram': {
+    text: '📷',
+    html: () => {
+      const id = `ig${++svgUid}`;
+      return `<svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <defs><radialGradient id="${id}" cx="0.28" cy="1.05" r="1.25">
+          <stop offset="0" stop-color="#FFDD80"/><stop offset=".22" stop-color="#FCA03E"/>
+          <stop offset=".48" stop-color="#F0386B"/><stop offset=".75" stop-color="#C32AA3"/>
+          <stop offset="1" stop-color="#5B4BDB"/></radialGradient></defs>
+        <rect x="1.8" y="1.8" width="20.4" height="20.4" rx="6" fill="url(#${id})"/>
+        <rect x="6" y="6" width="12" height="12" rx="3.7" fill="none" stroke="#fff" stroke-width="1.8"/>
+        <circle cx="12" cy="12" r="2.9" fill="none" stroke="#fff" stroke-width="1.8"/>
+        <circle cx="16.2" cy="7.8" r="1.05" fill="#fff"/></svg>`;
+    },
+  },
+};
+/** HTML иконки занятия (эмодзи или SVG). */
+const iconHTML = icon => {
+  if (SVG_ICONS[icon]) return SVG_ICONS[icon].html();
+  if (String(icon ?? '').startsWith('svg:')) return '⭐';
+  return esc(icon ?? '❔');
+};
+/** Текстовый вариант иконки — для мест, где SVG невозможен (список <select>). */
+const iconText = icon => SVG_ICONS[icon]?.text ?? (String(icon ?? '').startsWith('svg:') ? '⭐' : (icon ?? '❔'));
 const PERIODS = [['day', 'День'], ['week', 'Неделя'], ['month', 'Месяц'], ['year', 'Год']];
 
 /* ---------- Утилиты ---------- */
@@ -266,7 +307,7 @@ function renderTimer() {
     const act = activityById(r.activityId);
     current = `
       <section class="current" style="${cvars(act?.color)}">
-        <div class="current-name">${esc(act?.icon ?? '❔')} ${esc(act?.name ?? 'Без категории')}</div>
+        <div class="current-name">${iconHTML(act?.icon)} ${esc(act?.name ?? 'Без категории')}</div>
         <div class="clock mono" data-live="clock">${fmtClock(now - r.start)}</div>
         <div class="since">начато в ${fmtTime(r.start)}</div>
         <button class="btn glass-tint" data-action="stop">${ICON.stop} Стоп</button>
@@ -301,7 +342,7 @@ function renderTimer() {
         const ms = byId.get(a.id) || 0;
         return `
           <button class="tile ${active ? 'active' : ''}" data-action="toggle" data-id="${esc(a.id)}" style="${cvars(a.color)}">
-            <span class="tile-icon">${esc(a.icon)}</span>
+            <span class="tile-icon">${iconHTML(a.icon)}</span>
             <span class="tile-name">${esc(a.name)}</span>
             <span class="tile-time mono" data-tile="${esc(a.id)}">${ms > 0 ? fmtDur(ms) : ''}</span>
           </button>`;
@@ -434,7 +475,7 @@ function renderStats() {
       <section class="card list">
         ${tot.map(t => `
           <div class="row-item">
-            <span class="ticon" style="background:${soft(colorOf(t))}">${esc(iconOf(t))}</span>
+            <span class="ticon" style="background:${soft(colorOf(t))}">${iconHTML(iconOf(t))}</span>
             <div class="row-main">
               <div class="row-line"><span class="row-name">${esc(nameOf(t))}</span><span class="mono">${fmtDur(t.ms)}</span></div>
               <div class="bar"><i style="width:${((t.ms / maxMs) * 100).toFixed(1)}%;background:${colorOf(t)}"></i></div>
@@ -495,7 +536,7 @@ function renderHistory() {
             const range = `${fmtTime(e.start)} – ${e.end == null ? 'идёт…' : fmtTime(e.end)}`;
             return `
               <button class="row-item" data-action="edit-entry" data-id="${esc(e.id)}">
-                <span class="ticon" style="background:${soft(color)}">${esc(act?.icon ?? '❔')}</span>
+                <span class="ticon" style="background:${soft(color)}">${iconHTML(act?.icon)}</span>
                 <div class="row-main">
                   <div class="row-line"><span class="row-name">${esc(act?.name ?? 'Без категории')}</span>
                     <span class="mono" ${e.end == null ? `style="color:${color}"` : ''}>${fmtDur((e.end ?? now) - e.start)}</span></div>
@@ -523,7 +564,7 @@ function renderActivities() {
     <section class="card list">
       ${acts.map(a => `
         <button class="row-item" data-action="edit-activity" data-id="${esc(a.id)}">
-          <span class="ticon" style="background:${soft(a.color)}">${esc(a.icon)}</span>
+          <span class="ticon" style="background:${soft(a.color)}">${iconHTML(a.icon)}</span>
           <div class="row-main"><div class="row-line"><span class="row-name">${esc(a.name)}</span>
             <span class="muted small">${counts.get(a.id) || 0} зап.</span></div>
             ${a.overnight ? `<div class="row-sub">🌙 после ${NIGHT_HOUR}:00 — в день пробуждения</div>` : ''}</div>
@@ -588,7 +629,7 @@ function openEntryEditor(entry) {
     <div class="form">
       <label class="field"><span>Занятие</span>
         <select name="activity">
-          ${acts.map(a => `<option value="${esc(a.id)}" ${a.id === d.activityId ? 'selected' : ''}>${esc(a.icon)} ${esc(a.name)}</option>`).join('')}
+          ${acts.map(a => `<option value="${esc(a.id)}" ${a.id === d.activityId ? 'selected' : ''}>${esc(iconText(a.icon))} ${esc(a.name)}</option>`).join('')}
           <option value="" ${known ? '' : 'selected'}>Без категории</option>
         </select>
       </label>
@@ -649,7 +690,7 @@ function openActivityEditor(act) {
     ${sheetHead(act ? 'Изменить' : 'Новое занятие')}
     <div class="form">
       <div class="field">
-        <span class="ticon big" data-preview>${esc(icon)}</span>
+        <span class="ticon big" data-preview>${iconHTML(icon)}</span>
         <input name="name" class="grow" placeholder="Название" maxlength="30" autocomplete="off" value="${esc(act?.name ?? '')}">
       </div>
       <label class="field">
@@ -663,7 +704,8 @@ function openActivityEditor(act) {
       </div>
       <div class="label-small">Иконка</div>
       <div class="card emojis">
-        ${EMOJIS.map(e => `<button class="emoji" data-action="icon" data-v="${e}">${e}</button>`).join('')}
+        ${EMOJIS.map(e => `<button class="emoji" data-action="icon" data-v="${esc(e)}"
+          ${ICON_LABELS[e] ? `title="${ICON_LABELS[e]}" aria-label="${ICON_LABELS[e]}"` : ''}>${iconHTML(e)}</button>`).join('')}
       </div>
       ${act ? '<button class="btn danger-soft" data-action="delete">Удалить занятие</button>' : ''}
     </div>`, (action, el) => {
@@ -689,7 +731,7 @@ function openActivityEditor(act) {
   const paint = () => {
     sheet.setAttribute('style', cvars(color));
     const preview = $('[data-preview]', sheet);
-    preview.textContent = icon;
+    preview.innerHTML = iconHTML(icon);
     preview.style.background = soft(color);
     $$('.swatch', sheet).forEach(b => {
       const on = b.dataset.v === color;
